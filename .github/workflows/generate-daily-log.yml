@@ -1,0 +1,49 @@
+name: Generate Daily Workout Log
+
+on:
+  schedule:
+    - cron: "0 20 * * *" # JSTで毎朝5時に実行（UTCでは前日の20時）
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  create-log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Create markdown file
+        run: |
+          mkdir -p logs
+          file="logs/${{ steps.date.outputs.date }}.md"
+          if [ ! -f "$file" ]; then
+            echo "# ${{ steps.date.outputs.date }} の筋トレ記録" > "$file"
+            echo "" >> "$file"
+            echo "## 体重" >> "$file"
+            echo "- 朝：" >> "$file"
+            echo "- 夜：" >> "$file"
+            echo "" >> "$file"
+            echo "## トレーニング内容" >> "$file"
+            echo "- 種目：" >> "$file"
+            echo "- セット数・回数：" >> "$file"
+            echo "" >> "$file"
+            echo "## 食事内容" >> "$file"
+            echo "- 朝：" >> "$file"
+            echo "- 昼：" >> "$file"
+            echo "- 夜：" >> "$file"
+            echo "" >> "$file"
+            echo "## 感想メモ" >> "$file"
+            echo "- 体調や気づきなど" >> "$file"
+          fi
+
+      - name: Commit & Push
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add logs/
+          git commit -m "自動生成: ${{ steps.date.outputs.date }} のログ" || echo "No changes to commit"
+          git push
